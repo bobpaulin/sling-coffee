@@ -1,6 +1,10 @@
 package org.apache.sling.coffee;
 
+
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.InputStream;
 import java.util.Dictionary;
 import java.util.HashMap;
@@ -14,13 +18,27 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.coffee.impl.CoffeeScriptCompilerImpl;
-import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.osgi.service.component.ComponentContext;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.FileUtils;
 
 import static org.easymock.EasyMock.*;
 
 import junit.framework.TestCase;
+
+/**
+ * 
+ * CoffeeScript compiler tests
+ * 
+ * Based on the language demo at http://coffeescript.org
+ * 
+ * @author bpaulin
+ *
+ */
 
 public class CoffeeScriptCompilerImplTest extends TestCase {
     
@@ -28,7 +46,19 @@ public class CoffeeScriptCompilerImplTest extends TestCase {
     
     private ResourceResolverFactory mockResourceResolverFactory;
     
-    @Before
+    private ComponentContext mockComponentContext;
+    
+    private ResourceResolver mockResourceResolver;
+    
+    private Resource mockResource;
+    
+    private Node mockNode;
+    
+    private Property mockProperty;
+    
+    private Binary mockBinary;
+    
+    @BeforeClass
     public void setUp() throws Exception
     {
         super.setUp();
@@ -37,16 +67,13 @@ public class CoffeeScriptCompilerImplTest extends TestCase {
         mockResourceResolverFactory = createMock(ResourceResolverFactory.class);
         
         coffeeEx.setResourceResolverFactory(mockResourceResolverFactory);
-    }
-    
-    @Test
-    public void testCompile() throws Exception {
-        ComponentContext mockComponentContext = createMock(ComponentContext.class);
-        ResourceResolver mockResourceResolver = createMock(ResourceResolver.class);
-        Resource mockResource = createMock(Resource.class);
-        Node mockNode = createMock(Node.class);
-        Property mockProperty = createMock(Property.class);
-        Binary mockBinary = createMock(Binary.class);
+        
+        mockComponentContext = createMock(ComponentContext.class);
+        mockResourceResolver = createMock(ResourceResolver.class);
+        mockResource = createMock(Resource.class);
+        mockNode = createMock(Node.class);
+        mockProperty = createMock(Property.class);
+        mockBinary = createMock(Binary.class);
         
         InputStream coffeeInputStream = getClass().getResourceAsStream("/coffee-script.js");
         
@@ -71,10 +98,144 @@ public class CoffeeScriptCompilerImplTest extends TestCase {
         replay(mockResourceResolverFactory);
         
         coffeeEx.activate(mockComponentContext);
+    }
+    
+    @Test
+    public void testFunctionCompile() throws Exception {
+        testFileCompile("functions.coffee");
+    }
+    
+    @Test
+    public void testDefaultFunctionCompile() throws Exception {
+        testFileCompile("defaultFunctions.coffee");
+    }
+
+    @Test
+    public void testObjectAndArrayCompile() throws Exception {
+        testFileCompile("objectAndArrays.coffee");
+    }
+    
+    @Test
+    public void testJavaScriptReservedWordCompile() throws Exception {
+        testFileCompile("reservedWords.coffee");
+    }
+    
+    @Test
+    public void testLexicalScopingSafetyCompile() throws Exception {
+        testFileCompile("lexicalScopingSafety.coffee");
+    }
+    
+    @Test
+    public void testIfElseUnlessCompile() throws Exception {
+        testFileCompile("ifElseUnless.coffee");
+    }
+    
+    @Test
+    public void testSplatsCompile() throws Exception {
+        testFileCompile("splats.coffee");
+    }
+    
+    @Test
+    public void testLoopsCompile() throws Exception {
+        testFileCompile("loops.coffee");
+    }
+    
+    @Test
+    public void testComprehensionCompile() throws Exception {
+        testFileCompile("comprehension.coffee");
+    }
+    
+    @Test
+    public void testArraySlicingSplicingCompile() throws Exception {
+        testFileCompile("arraySlicingSplicing.coffee");
+    }
+    
+    @Test
+    public void testExpressionsCompile() throws Exception {
+        testFileCompile("expressions.coffee");
+    }
+    
+    @Test
+    public void testOperatorsAliasesCompile() throws Exception {
+        testFileCompile("operatorsAliases.coffee");
+    }
+    
+    @Test
+    public void testClassesCompile() throws Exception {
+        testFileCompile("classes.coffee");
+    }
+    
+    @Test
+    public void testAssignmentCompile() throws Exception {
+        testFileCompile("assignment.coffee");
+    }
+    
+    @Test
+    public void testFunctionBindingCompile() throws Exception {
+        testFileCompile("functionBinding.coffee");
+    }
+    
+    @Test
+    public void testEmbeddedJsCompile() throws Exception {
+        testFileCompile("embeddedJs.coffee");
+    }
+    
+    @Test
+    public void testSwitchWhenElseCompile() throws Exception {
+        testFileCompile("switchWhenElse.coffee");
+    }
+    
+    @Test
+    public void testTryCatchFinallyCompile() throws Exception {
+        testFileCompile("tryCatchFinally.coffee");
+    }
+    
+    @Test
+    public void testChainedComparisionsCompile() throws Exception {
+        testFileCompile("chainedComparisons.coffee");
+    }
+    
+    @Test
+    public void testStringInterpolationCommentsCompile() throws Exception {
+        testFileCompile("stringInterpolationComments.coffee");
+    }
+    
+    @Test
+    public void testBlockRegularExpressionsCompile() throws Exception {
+        testFileCompile("blockRegularExpressions.coffee");
+    }
+    
+    private void testFileCompile(String fileName) throws Exception {
+        String coffeeScriptString = getTestCoffeeFileString(fileName);
         
-        String result = coffeeEx.compile("do -> console.log 'Hello, Sling world!'");
-        System.out.println(result);
+        String result = coffeeEx.compile(coffeeScriptString);
         
+        assertEquals("File named: " + fileName + " should compile to proper JavaScript", getResultJavaScriptFileString(fileName), result);
+    }
+    
+    private String convertFileToString(String filePath) throws Exception
+    {
+        
+        InputStream inputStream = getClass().getResourceAsStream(filePath);
+
+        
+        return IOUtils.toString(inputStream, "UTF-8");
+    }
+    
+    private String getTestCoffeeFileString(String fileName) throws Exception
+    {
+        return convertFileToString("/test-coffee/"+ fileName);
+    }
+    
+    private String getResultJavaScriptFileString(String fileName) throws Exception
+    {
+        fileName = fileName.replaceFirst(".coffee", "");
+        return convertFileToString("/result-js/"+ fileName + ".js");
+    }
+    
+    @AfterClass
+    public void after()
+    {
         verify(mockBinary);
         verify(mockProperty);
         verify(mockComponentContext);

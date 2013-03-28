@@ -65,8 +65,14 @@ public class CoffeeTag extends TagSupport {
         JspWriter out = null;
         try {
             out = pageContext.getOut();
-            String javaScript = coffee.getJavascript(currentNode.getSession(), path);
-            out.write(javaScript);
+            String[] paths = path.split(",");
+            
+            for(String currentPath: paths)
+            {
+                String javaScript = coffee.getJavascript(currentNode.getSession(), currentPath);
+                out.write(javaScript);
+            }
+            
             
             if(wrapWithTag != null)
             {
