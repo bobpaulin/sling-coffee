@@ -3,7 +3,7 @@
 <%@page import="javax.jcr.Property" %>
 <%@page import="org.apache.sling.api.resource.Resource" %>
 <%@taglib prefix="sling" uri="http://sling.apache.org/taglibs/sling/1.0"%>
-<%@taglib prefix="coffee" uri="http://sling.apache.org/taglibs/sling/coffee/1.0.0"%>
+<%@taglib prefix="webresource" uri="http://sling.apache.org/taglibs/sling/webresource/1.0.0"%>
 <sling:defineObjects/>
 <% 
 	Resource demoScript = resource.getChild("demo.coffee"); 
@@ -38,7 +38,7 @@
 <head>
   <title>Try Sling CoffeeScript</title>
   <script type="text/javascript" src="/system/sling.js"></script>
-  <coffee:coffee path="/content/coffee/demo/demo.coffee" wrapWithTag="script"/>
+  <webresource:webresource path="/content/coffee/demo/demo.coffee" wrapWithTag="script"/>
 </head>
 <body>
 	<div>
@@ -53,7 +53,7 @@
 		</form>
 	</div>
   	<div id="coffeeResult">
-		<coffee:coffee path="/content/coffee/demo/demo.coffee"/>
+		<webresource:webresource path="/content/coffee/demo/demo.coffee"/>
   	</div>
   	<button onclick="eval(document.getElementById('coffeeResult').childNodes[0].nodeValue.trim())" >Evaluate</button>
 </body>

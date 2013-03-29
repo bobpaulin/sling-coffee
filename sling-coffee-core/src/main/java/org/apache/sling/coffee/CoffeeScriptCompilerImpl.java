@@ -1,4 +1,4 @@
-package org.apache.sling.coffee.impl;
+package org.apache.sling.coffee;
 
 
 import java.io.IOException;
@@ -20,13 +20,14 @@ import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
-import org.apache.sling.coffee.CoffeeScriptCompiler;
-import org.apache.sling.coffee.exception.CoffeeCompileException;
 import org.apache.sling.commons.osgi.PropertiesUtil;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ScriptableObject;
 import org.osgi.service.component.ComponentContext;
+
+import org.apache.sling.webresource.WebResourceScriptCompiler;
+import org.apache.sling.webresource.exception.WebResourceCompileException;
 
 /**
  * 
@@ -38,7 +39,7 @@ import org.osgi.service.component.ComponentContext;
 
 @Component(immediate=true, metatype=true)
 @Service
-public class CoffeeScriptCompilerImpl implements CoffeeScriptCompiler {
+public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
     
     @Reference
     private ResourceResolverFactory resourceResolverFactory;
@@ -48,19 +49,25 @@ public class CoffeeScriptCompilerImpl implements CoffeeScriptCompiler {
     @org.apache.felix.scr.annotations.Property(value="/system/coffee/coffee-script.js")
     private final static String COFFEE_COMPILER_PATH = "coffee.compiler.path";
     
+    @org.apache.felix.scr.annotations.Property(value="/var/coffeescript")
+    private final static String COFFEE_CACHE_PATH = "coffee.cache.path";
+    
     private String coffeeCompilerPath;
+    
+    private String coffeeCachePath;
     
     public void activate(final ComponentContext context) throws Exception
     {
         Dictionary config = context.getProperties();
         coffeeCompilerPath = PropertiesUtil.toString(config.get(COFFEE_COMPILER_PATH), "/system/coffee/coffee-script.js");
+        coffeeCachePath = PropertiesUtil.toString(config.get(COFFEE_CACHE_PATH), "/var/coffeescript");
         loadCoffeeScriptCompiler();
     }
     
     /**
      *  Compile CoffeeScript with Rhino
      */
-    public String compile(String coffeeScript) throws CoffeeCompileException
+    public String compile(String coffeeScript) throws WebResourceCompileException
     {
         StringBuffer scriptBuffer = new StringBuffer();
         scriptBuffer.append("CoffeeScript.compile(");
@@ -74,7 +81,7 @@ public class CoffeeScriptCompilerImpl implements CoffeeScriptCompiler {
         }
         catch(Exception e)
         {
-           throw new CoffeeCompileException(e);
+           throw new WebResourceCompileException(e);
         }
         finally
         {
@@ -82,6 +89,16 @@ public class CoffeeScriptCompilerImpl implements CoffeeScriptCompiler {
                 Context.exit();
             }
         }
+    }
+    
+    public String getCacheRoot()
+    {
+        return this.coffeeCachePath;
+    }
+    
+    public boolean canCompileExtension(String extention)
+    {
+        return "coffee".equals(extention);
     }
     
     /**
@@ -182,7 +199,6 @@ public class CoffeeScriptCompilerImpl implements CoffeeScriptCompiler {
         }
         result = Context.getCurrentContext();
         result.setOptimizationLevel(-1);
-        //result.setLanguageVersion(Context.VERSION_1_8);
         result.setLanguageVersion(Context.VERSION_1_7);
         return result;
     }

@@ -17,7 +17,7 @@ import javax.jcr.Property;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
-import org.apache.sling.coffee.impl.CoffeeScriptCompilerImpl;
+import org.apache.sling.coffee.CoffeeScriptCompilerImpl;
 import org.junit.BeforeClass;
 import org.junit.AfterClass;
 import org.junit.Test;
@@ -79,6 +79,7 @@ public class CoffeeScriptCompilerImplTest extends TestCase {
         
         Hashtable bundleProperties = new Hashtable();
         bundleProperties.put("coffee.compiler.path", "/test/path");
+        bundleProperties.put("coffee.cache.path", "/test/path2");
         expect(mockComponentContext.getProperties()).andReturn(bundleProperties);
         expect(mockResourceResolverFactory.getAdministrativeResourceResolver(null)).andReturn(mockResourceResolver);
         expect(mockResourceResolver.getResource("/test/path")).andReturn(mockResource);
