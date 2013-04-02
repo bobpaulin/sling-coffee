@@ -1,9 +1,11 @@
 package org.apache.sling.coffee;
 
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.util.Dictionary;
 import java.util.Map;
 
@@ -28,6 +30,8 @@ import org.osgi.service.component.ComponentContext;
 
 import org.apache.sling.webresource.WebResourceScriptCompiler;
 import org.apache.sling.webresource.exception.WebResourceCompileException;
+
+import org.apache.commons.io.IOUtils;
 
 /**
  * 
@@ -67,17 +71,22 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
     /**
      *  Compile CoffeeScript with Rhino
      */
-    public String compile(String coffeeScript) throws WebResourceCompileException
+    public InputStream compile(InputStream coffeeScriptStream) throws WebResourceCompileException
     {
-        StringBuffer scriptBuffer = new StringBuffer();
-        scriptBuffer.append("CoffeeScript.compile(");
-        scriptBuffer.append(toJSMultiLineString(coffeeScript));
-        scriptBuffer.append(", ");
-        scriptBuffer.append("{});");
         try{
+            String coffeeScript = IOUtils.toString(coffeeScriptStream);
+            StringBuffer scriptBuffer = new StringBuffer();
+            scriptBuffer.append("CoffeeScript.compile(");
+            scriptBuffer.append(toJSMultiLineString(coffeeScript));
+            scriptBuffer.append(", ");
+            scriptBuffer.append("{});");
+            StringReader coffeeScriptReader = new StringReader(scriptBuffer.toString());
+        
             Context rhinoContext = getContext();
             rhinoContext.initStandardObjects(scope);
-            return (String)rhinoContext.evaluateString(scope, scriptBuffer.toString(), "CoffeeScript", 1, null);
+            //String compiledScript = (String)rhinoContext.evaluateString(scope, scriptBuffer.toString(), "CoffeeScript", 1, null);
+            String compiledScript = (String)rhinoContext.evaluateReader(scope, coffeeScriptReader, "CoffeeScript", 1, null);
+            return new ByteArrayInputStream(compiledScript.getBytes());
         }
         catch(Exception e)
         {
@@ -96,9 +105,18 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
         return this.coffeeCachePath;
     }
     
-    public boolean canCompileExtension(String extention)
+    public boolean canCompileNode(Node sourceNode) throws WebResourceCompileException
     {
-        return "coffee".equals(extention);
+        String nodeName = null;
+        try{
+            nodeName = sourceNode.getName();
+        }catch(RepositoryException e)
+        {
+            throw new WebResourceCompileException(e);
+        }
+        int extensionPosition = nodeName.lastIndexOf(".");
+        String extension = nodeName.substring(extensionPosition + 1);
+        return "coffee".equals(extension);
     }
     
     /**
@@ -149,8 +167,7 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
         Resource coffeeCompilerResource = resolver.getResource(coffeeCompilerPath);
         Node coffeeNode = coffeeCompilerResource.adaptTo(Node.class);
         Node jcrContent = coffeeNode.getNode(Property.JCR_CONTENT);
-        InputStream content = jcrContent.getProperty(Property.JCR_DATA).getBinary().getStream();
-        return content;
+        return jcrContent.getProperty(Property.JCR_DATA).getBinary().getStream();
     }
     
     /**

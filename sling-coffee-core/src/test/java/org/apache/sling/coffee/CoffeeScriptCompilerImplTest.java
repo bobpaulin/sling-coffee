@@ -207,31 +207,27 @@ public class CoffeeScriptCompilerImplTest extends TestCase {
     }
     
     private void testFileCompile(String fileName) throws Exception {
-        String coffeeScriptString = getTestCoffeeFileString(fileName);
+        InputStream coffeeScriptStream = getTestCoffeeFile(fileName);
         
-        String result = coffeeEx.compile(coffeeScriptString);
+        InputStream result = coffeeEx.compile(coffeeScriptStream);
         
-        assertEquals("File named: " + fileName + " should compile to proper JavaScript", getResultJavaScriptFileString(fileName), result);
+        assertEquals("File named: " + fileName + " should compile to proper JavaScript", IOUtils.toString(getResultJavaScriptFile(fileName), "UTF-8"), IOUtils.toString(result, "UTF-8"));
     }
     
-    private String convertFileToString(String filePath) throws Exception
+    private InputStream convertFileToStream(String filePath) throws Exception
     {
-        
-        InputStream inputStream = getClass().getResourceAsStream(filePath);
-
-        
-        return IOUtils.toString(inputStream, "UTF-8");
+        return getClass().getResourceAsStream(filePath);
     }
     
-    private String getTestCoffeeFileString(String fileName) throws Exception
+    private InputStream getTestCoffeeFile(String fileName) throws Exception
     {
-        return convertFileToString("/test-coffee/"+ fileName);
+        return convertFileToStream("/test-coffee/"+ fileName);
     }
     
-    private String getResultJavaScriptFileString(String fileName) throws Exception
+    private InputStream getResultJavaScriptFile(String fileName) throws Exception
     {
         fileName = fileName.replaceFirst(".coffee", "");
-        return convertFileToString("/result-js/"+ fileName + ".js");
+        return convertFileToStream("/result-js/"+ fileName + ".js");
     }
     
     @AfterClass
