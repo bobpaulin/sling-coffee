@@ -38,7 +38,7 @@
 <head>
   <title>Try Sling CoffeeScript</title>
   <script type="text/javascript" src="/system/sling.js"></script>
-  <webresource:webresource groupName="demoGroup" wrapWithTag="script"/>
+  <webresource:webresource groupName="demoGroup" shouldInline="true"/>
 </head>
 <body>
 	<div>

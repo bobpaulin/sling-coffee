@@ -30,8 +30,12 @@ import org.osgi.service.component.ComponentContext;
 
 import org.apache.sling.webresource.WebResourceScriptCompiler;
 import org.apache.sling.webresource.exception.WebResourceCompileException;
+import org.apache.sling.webresource.util.JCRUtils;
 
 import org.apache.commons.io.IOUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -55,6 +59,8 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
     
     @org.apache.felix.scr.annotations.Property(value="/var/coffeescript")
     private final static String COFFEE_CACHE_PATH = "coffee.cache.path";
+    
+    private final Logger log = LoggerFactory.getLogger(getClass());
     
     private String coffeeCompilerPath;
     
@@ -105,18 +111,23 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
         return this.coffeeCachePath;
     }
     
-    public boolean canCompileNode(Node sourceNode) throws WebResourceCompileException
+    public boolean canCompileNode(Node sourceNode)
     {
-        String nodeName = null;
+        String extension = null;
         try{
-            nodeName = sourceNode.getName();
+           extension = JCRUtils.getNodeExtension(sourceNode);
         }catch(RepositoryException e)
         {
-            throw new WebResourceCompileException(e);
+            //Log Exception
+            log.info("Node Name can not be read.  Skipping node.");
         }
-        int extensionPosition = nodeName.lastIndexOf(".");
-        String extension = nodeName.substring(extensionPosition + 1);
+        
         return "coffee".equals(extension);
+    }
+    
+    public String compiledScriptExtension()
+    {
+        return "js";
     }
     
     /**
