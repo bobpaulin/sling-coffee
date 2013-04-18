@@ -109,7 +109,7 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
         
             Context rhinoContext = getContext();
             rhinoContext.initStandardObjects(scope);
-            //String compiledScript = (String)rhinoContext.evaluateString(scope, scriptBuffer.toString(), "CoffeeScript", 1, null);
+
             String compiledScript = (String)rhinoContext.evaluateReader(scope, coffeeScriptReader, "CoffeeScript", 1, null);
             return new ByteArrayInputStream(compiledScript.getBytes());
         }
