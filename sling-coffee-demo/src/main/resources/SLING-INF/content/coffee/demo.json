@@ -1,30 +1,4 @@
 {
 	"title":"CoffeeScript Demo",
-	"sling:resourceType":"coffee/demo",
-	"demoFolder":{
-		"jcr:primaryType": "nt:folder",
-		"jcr:mixinTypes": ["webresource:WebResourceGroup"],
-		"webresource:name": "demoGroup",
-		"demo.coffee":{
-			"jcr:primaryType": "nt:file",
-			"jcr:content":{
-				"jcr:primaryType": "nt:resource",
-				"jcr:data":"console.log 'Hello, Sling'"
-			}
-		},
-		"demo.text":{
-			"jcr:primaryType": "nt:file",
-			"jcr:content":{
-				"jcr:primaryType": "nt:resource",
-				"jcr:data":"Stuff Here"
-			}
-		},
-		"demo.js":{
-			"jcr:primaryType": "nt:file",
-			"jcr:content":{
-				"jcr:primaryType": "nt:resource",
-				"jcr:data":"console.log('Hello, SlingJS');"
-			}
-		}
-	}
+	"sling:resourceType":"coffee/demo"
 }
