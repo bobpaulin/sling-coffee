@@ -23,6 +23,7 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.commons.osgi.PropertiesUtil;
+import org.apache.sling.commons.json.JSONObject;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ScriptableObject;
@@ -79,13 +80,31 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
      */
     public InputStream compile(InputStream coffeeScriptStream) throws WebResourceCompileException
     {
+        return compile(coffeeScriptStream, null);
+    }
+    
+    public InputStream compile(InputStream coffeeScriptStream, Map<String, Object> compileOptions) throws WebResourceCompileException
+    {
+        Map<String, Object> coffeeCompileOptions = null;
+        if(compileOptions != null)
+        {
+            coffeeCompileOptions = (Map<String, Object>) compileOptions.get("coffeescript");
+        }
         try{
             String coffeeScript = IOUtils.toString(coffeeScriptStream);
             StringBuffer scriptBuffer = new StringBuffer();
             scriptBuffer.append("CoffeeScript.compile(");
             scriptBuffer.append(toJSMultiLineString(coffeeScript));
             scriptBuffer.append(", ");
-            scriptBuffer.append("{});");
+            if(coffeeCompileOptions == null)
+            {
+                scriptBuffer.append("{}");
+            }
+            else
+            {
+                scriptBuffer.append(generateCompileOptionsString(coffeeCompileOptions));
+            }
+            scriptBuffer.append(");");
             StringReader coffeeScriptReader = new StringReader(scriptBuffer.toString());
         
             Context rhinoContext = getContext();
@@ -104,6 +123,19 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
                 Context.exit();
             }
         }
+    }
+    
+    /**
+     * 
+     * Change compile options into a string
+     * 
+     * @param compileOptions
+     * @return
+     */
+    protected String generateCompileOptionsString(Map<String, Object> compileOptions)
+    {
+        JSONObject keysJson = new JSONObject(compileOptions);
+        return keysJson.toString();
     }
     
     public String getCacheRoot()

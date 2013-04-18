@@ -6,7 +6,7 @@
 <%@taglib prefix="webresource" uri="http://sling.apache.org/taglibs/sling/webresource/1.0.0"%>
 <sling:defineObjects/>
 <% 
-	Resource demoScript = resource.getChild("demoFolder/demo.coffee"); 
+	Resource demoScript = resource.getChild("demo.coffee"); 
 	String demoContent = null;
 	if(demoScript != null)
 	{
@@ -38,11 +38,10 @@
 <head>
   <title>Try Sling CoffeeScript</title>
   <script type="text/javascript" src="/system/sling.js"></script>
-  <webresource:webresource groupName="demoGroup" shouldInline="true"/>
 </head>
 <body>
 	<div>
-		<form action="/content/coffee/demo/demoFolder/demo.coffee" method="POST" enctype="multipart/form-data">
+		<form action="/content/coffee/demo/demo.coffee" method="POST" enctype="multipart/form-data">
 			<textarea name="jcr:content/jcr:data" cols="50" rows="20"><%= demoContent%></textarea>
 			<input name="jcr:primaryType" type="hidden" value="nt:file" />
 			<input name="jcr:content/jcr:primaryType" type="hidden" value="nt:resource"/>
@@ -53,8 +52,8 @@
 		</form>
 	</div>
   	<div id="coffeeResult">
-		<webresource:webresource groupName="demoGroup"/>
+		<webresource:webresource path="/content/coffee/demo/demo.coffee" shouldInline="true"/>
   	</div>
-  	<button onclick="eval(document.getElementById('coffeeResult').childNodes[0].nodeValue.trim())" >Evaluate</button>
+  	<button onclick="eval(document.getElementById('coffeeResult').children[0].childNodes[0].nodeValue.trim())" >Evaluate</button>
 </body>
 </html>
