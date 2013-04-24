@@ -146,15 +146,25 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
     public boolean canCompileNode(Node sourceNode)
     {
         String extension = null;
+        String mimeType = null;
         try{
+           
+            if (sourceNode.hasNode(Property.JCR_CONTENT)) {
+                Node sourceContent = sourceNode.getNode(Property.JCR_CONTENT);
+                if(sourceContent.hasProperty(Property.JCR_MIMETYPE))
+                {
+                    mimeType = sourceContent.getProperty(Property.JCR_MIMETYPE).getString();
+                }
+            }
            extension = JCRUtils.getNodeExtension(sourceNode);
+
         }catch(RepositoryException e)
         {
             //Log Exception
             log.info("Node Name can not be read.  Skipping node.");
         }
         
-        return "coffee".equals(extension);
+        return "coffee".equals(extension) || "text/coffeescript".equals(mimeType);
     }
     
     public String compiledScriptExtension()
