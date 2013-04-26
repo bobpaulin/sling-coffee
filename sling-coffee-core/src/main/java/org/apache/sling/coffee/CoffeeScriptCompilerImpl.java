@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.Dictionary;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.jcr.Node;
@@ -46,7 +47,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 
-@Component(immediate=true, metatype=true)
+@Component(label="CoffeeScript Compiler Service", immediate=true, metatype=true)
 @Service
 public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
     
@@ -55,11 +56,14 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
     
     private ScriptableObject scope = null;
     
-    @org.apache.felix.scr.annotations.Property(value="/system/coffee/coffee-script.js")
+    @org.apache.felix.scr.annotations.Property(label="CoffeeScript Compiler Script Path", value="/system/coffee/coffee-script.js")
     private final static String COFFEE_COMPILER_PATH = "coffee.compiler.path";
     
-    @org.apache.felix.scr.annotations.Property(value="/var/coffeescript")
+    @org.apache.felix.scr.annotations.Property(label="CoffeeScript Cache Path", value="/var/coffeescript")
     private final static String COFFEE_CACHE_PATH = "coffee.cache.path";
+    
+    @org.apache.felix.scr.annotations.Property(label="CoffeeScript Compiler Bare Option", boolValue=false)
+    private final static String COFFEE_COMPILE_OPTION_BARE = "coffee.compile.option.bare";
     
     private final Logger log = LoggerFactory.getLogger(getClass());
     
@@ -67,11 +71,14 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
     
     private String coffeeCachePath;
     
+    private boolean coffeeCompileOptionBare;
+    
     public void activate(final ComponentContext context) throws Exception
     {
         Dictionary config = context.getProperties();
         coffeeCompilerPath = PropertiesUtil.toString(config.get(COFFEE_COMPILER_PATH), "/system/coffee/coffee-script.js");
         coffeeCachePath = PropertiesUtil.toString(config.get(COFFEE_CACHE_PATH), "/var/coffeescript");
+        coffeeCompileOptionBare = PropertiesUtil.toBoolean(config.get(COFFEE_COMPILE_OPTION_BARE), false);
         loadCoffeeScriptCompiler();
     }
     
@@ -85,18 +92,16 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
     
     public InputStream compile(InputStream coffeeScriptStream, Map<String, Object> compileOptions) throws WebResourceCompileException
     {
-        Map<String, Object> coffeeCompileOptions = null;
-        if(compileOptions != null)
-        {
-            coffeeCompileOptions = (Map<String, Object>) compileOptions.get("coffeescript");
-        }
+        Map<String, Object> coffeeCompileOptions = new HashMap<String, Object>();
+        processCompileOptions(compileOptions,
+                coffeeCompileOptions);
         try{
             String coffeeScript = IOUtils.toString(coffeeScriptStream);
             StringBuffer scriptBuffer = new StringBuffer();
             scriptBuffer.append("CoffeeScript.compile(");
             scriptBuffer.append(toJSMultiLineString(coffeeScript));
             scriptBuffer.append(", ");
-            if(coffeeCompileOptions == null)
+            if(coffeeCompileOptions.isEmpty())
             {
                 scriptBuffer.append("{}");
             }
@@ -123,6 +128,29 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
                 Context.exit();
             }
         }
+    }
+    /**
+     * 
+     * Merges JCR and OSGi Compile options.
+     * 
+     * @param compileOptions
+     * @param coffeeCompileOptions
+     * @return
+     */
+    protected Map<String, Object> processCompileOptions(
+            Map<String, Object> compileOptions,
+            Map<String, Object> coffeeCompileOptions) {
+        if(coffeeCompileOptionBare)
+        {
+            coffeeCompileOptions.put("bare", "true");
+        }
+        
+        if(compileOptions != null && compileOptions.get("coffeescript") != null)
+        {
+            coffeeCompileOptions.putAll((Map<String, Object>) compileOptions.get("coffeescript"));
+        }
+        
+        return coffeeCompileOptions;
     }
     
     /**
