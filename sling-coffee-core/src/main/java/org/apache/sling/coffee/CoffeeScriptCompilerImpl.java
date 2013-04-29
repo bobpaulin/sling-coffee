@@ -24,7 +24,6 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.commons.osgi.PropertiesUtil;
-import org.apache.sling.commons.json.JSONObject;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ScriptableObject;
@@ -33,6 +32,7 @@ import org.osgi.service.component.ComponentContext;
 import org.apache.sling.webresource.WebResourceScriptCompiler;
 import org.apache.sling.webresource.exception.WebResourceCompileException;
 import org.apache.sling.webresource.util.JCRUtils;
+import org.apache.sling.webresource.util.ScriptUtils;
 
 import org.apache.commons.io.IOUtils;
 
@@ -99,7 +99,7 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
             String coffeeScript = IOUtils.toString(coffeeScriptStream);
             StringBuffer scriptBuffer = new StringBuffer();
             scriptBuffer.append("CoffeeScript.compile(");
-            scriptBuffer.append(toJSMultiLineString(coffeeScript));
+            scriptBuffer.append(ScriptUtils.toJSMultiLineString(coffeeScript));
             scriptBuffer.append(", ");
             if(coffeeCompileOptions.isEmpty())
             {
@@ -107,7 +107,7 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
             }
             else
             {
-                scriptBuffer.append(generateCompileOptionsString(coffeeCompileOptions));
+                scriptBuffer.append(ScriptUtils.generateCompileOptionsString(coffeeCompileOptions));
             }
             scriptBuffer.append(");");
             StringReader coffeeScriptReader = new StringReader(scriptBuffer.toString());
@@ -151,19 +151,6 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
         }
         
         return coffeeCompileOptions;
-    }
-    
-    /**
-     * 
-     * Change compile options into a string
-     * 
-     * @param compileOptions
-     * @return
-     */
-    protected String generateCompileOptionsString(Map<String, Object> compileOptions)
-    {
-        JSONObject keysJson = new JSONObject(compileOptions);
-        return keysJson.toString();
     }
     
     public String getCacheRoot()
@@ -249,37 +236,6 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
         Node coffeeNode = coffeeCompilerResource.adaptTo(Node.class);
         Node jcrContent = coffeeNode.getNode(Property.JCR_CONTENT);
         return jcrContent.getProperty(Property.JCR_DATA).getBinary().getStream();
-    }
-    
-    /**
-     * Transforms a java multi-line string into javascript multi-line string. This technique was found at {@link http
-     * ://stackoverflow.com/questions/805107/multiline-strings-in-javascript/}
-     * 
-     * @param data
-     *          a string containing new lines.
-     * @return a string which being evaluated on the client-side will be treated as a correct multi-line string.
-     */
-    public String toJSMultiLineString(final String data) {
-      final String[] lines = data.split("\n");
-      final StringBuffer result = new StringBuffer("[");
-      if (lines.length == 0) {
-        result.append("\"\"");
-      }
-      for (int i = 0; i < lines.length; i++) {
-        final String line = lines[i];
-        result.append("\"");
-        result.append(line.replace("\\", "\\\\").replace("\"", "\\\"").replaceAll("\\r|\\n", ""));
-        // this is used to force a single line to have at least one new line (otherwise cssLint fails).
-        if (lines.length == 1) {
-          result.append("\\n");
-        }
-        result.append("\"");
-        if (i < lines.length - 1) {
-          result.append(",");
-        }
-      }
-      result.append("].join(\"\\n\")");
-      return result.toString();
     }
     
     /**
