@@ -1,6 +1,6 @@
 Sling CoffeeScript Compiler
 
-This project provides a tag lib and a service for compiling CoffeeScript into JavaScript on the fly in Sling.
+This project provides a service for compiling CoffeeScript into JavaScript on the fly in Sling.
 
 REQUIRES [sling-web-resource](https://github.com/bobpaulin/sling-web-resource) project bundle to be installed.
 

@@ -22,7 +22,7 @@
     <groupId>org.apache.sling</groupId>
     <artifactId>sling-coffee-demo</artifactId>
     <packaging>bundle</packaging>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1.0-SNAPSHOT</version>
     <name>sling coffee demo</name>
     <description>org.apache.sling - coffee-demo</description>
     <build>

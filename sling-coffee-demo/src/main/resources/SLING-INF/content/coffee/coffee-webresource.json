@@ -1,0 +1,6 @@
+{
+	"jcr:primaryType": "nt:folder",
+	"jcr:mixinTypes": ["webresource:WebResourceGroup"],
+	"webresource:name": "coffee-demo",
+	"webresource:cachePath": "/content/coffee/js"
+}

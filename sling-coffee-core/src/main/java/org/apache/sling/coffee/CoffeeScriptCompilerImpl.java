@@ -2,10 +2,7 @@ package org.apache.sling.coffee;
 
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +13,8 @@ import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.ValueFormatException;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.time.StopWatch;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
@@ -24,18 +23,13 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.commons.osgi.PropertiesUtil;
-
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ScriptableObject;
-import org.osgi.service.component.ComponentContext;
-
 import org.apache.sling.webresource.WebResourceScriptCompiler;
+import org.apache.sling.webresource.WebResourceScriptRunner;
+import org.apache.sling.webresource.WebResourceScriptRunnerFactory;
 import org.apache.sling.webresource.exception.WebResourceCompileException;
 import org.apache.sling.webresource.util.JCRUtils;
 import org.apache.sling.webresource.util.ScriptUtils;
-
-import org.apache.commons.io.IOUtils;
-
+import org.osgi.service.component.ComponentContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +48,8 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
     @Reference
     private ResourceResolverFactory resourceResolverFactory;
     
-    private ScriptableObject scope = null;
+    @Reference
+    private WebResourceScriptRunnerFactory webResourceScriptRunnerFactory;
     
     @org.apache.felix.scr.annotations.Property(label="CoffeeScript Compiler Script Path", value="/system/coffee/coffee-script.js")
     private final static String COFFEE_COMPILER_PATH = "coffee.compiler.path";
@@ -73,14 +68,35 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
     
     private boolean coffeeCompileOptionBare;
     
+    private WebResourceScriptRunner scriptRunner;
+    
     public void activate(final ComponentContext context) throws Exception
     {
         Dictionary config = context.getProperties();
         coffeeCompilerPath = PropertiesUtil.toString(config.get(COFFEE_COMPILER_PATH), "/system/coffee/coffee-script.js");
         coffeeCachePath = PropertiesUtil.toString(config.get(COFFEE_CACHE_PATH), "/var/coffeescript");
         coffeeCompileOptionBare = PropertiesUtil.toBoolean(config.get(COFFEE_COMPILE_OPTION_BARE), false);
-        loadCoffeeScriptCompiler();
+        
+        loadCoffeeScriptRunner();
     }
+
+	private void loadCoffeeScriptRunner() throws LoginException,
+			PathNotFoundException, RepositoryException, ValueFormatException {
+		ResourceResolver resolver = null;
+        try{
+            resolver = resourceResolverFactory.getAdministrativeResourceResolver(null);
+            
+            InputStream content = getCoffeeScriptJsStream(resolver);
+            this.scriptRunner = webResourceScriptRunnerFactory.createRunner("coffee-script.js", content);
+        }
+        finally
+        {
+            if(resolver != null)
+            {
+                resolver.close();
+            }
+        }
+	}
     
     /**
      *  Compile CoffeeScript with Rhino
@@ -110,23 +126,21 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
                 scriptBuffer.append(ScriptUtils.generateCompileOptionsString(coffeeCompileOptions));
             }
             scriptBuffer.append(");");
-            StringReader coffeeScriptReader = new StringReader(scriptBuffer.toString());
-        
-            Context rhinoContext = getContext();
-            rhinoContext.initStandardObjects(scope);
-
-            String compiledScript = (String)rhinoContext.evaluateReader(scope, coffeeScriptReader, "CoffeeScript", 1, null);
+            InputStream coffeeScriptCompileStream = new ByteArrayInputStream(scriptBuffer.toString().getBytes());
+            
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
+            
+            String compiledScript = scriptRunner.evaluateScript(coffeeScriptCompileStream, new HashMap<String, Object>());
+            
+            stopWatch.stop();
+            log.debug("Completed CoffeeScript Compile " + stopWatch);
+            
             return new ByteArrayInputStream(compiledScript.getBytes());
         }
         catch(Exception e)
         {
            throw new WebResourceCompileException(e);
-        }
-        finally
-        {
-            if (Context.getCurrentContext() != null) {
-                Context.exit();
-            }
         }
     }
     /**
@@ -187,37 +201,6 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
         return "js";
     }
     
-    /**
-     * 
-     * Loads CoffeeScript compiler stream to Rhino
-     * 
-     * @throws LoginException
-     * @throws PathNotFoundException
-     * @throws RepositoryException
-     * @throws ValueFormatException
-     * @throws IOException
-     */
-    protected void loadCoffeeScriptCompiler() throws LoginException,
-            PathNotFoundException, RepositoryException, ValueFormatException,
-            IOException {
-        Context rhinoContext = getContext();
-        ResourceResolver resolver = null;
-        try{
-            resolver = resourceResolverFactory.getAdministrativeResourceResolver(null);
-            
-            InputStream content = getCoffeeScriptJsStream(resolver);
-            scope = (ScriptableObject) rhinoContext.initStandardObjects(null);
-            rhinoContext.evaluateReader(scope, new InputStreamReader(content), "coffee-script.js", 1, null);
-        }
-        finally
-        {
-            if(resolver != null)
-            {
-                resolver.close();
-            }
-        }
-
-    }
 
     /**
      * 
@@ -238,27 +221,13 @@ public class CoffeeScriptCompilerImpl implements WebResourceScriptCompiler {
         return jcrContent.getProperty(Property.JCR_DATA).getBinary().getStream();
     }
     
-    /**
-     * 
-     * Retrieves Rhino Context and sets language and optimizations.
-     * 
-     * @return
-     */
-    public Context getContext()
-    {
-        Context result = null;
-        if(Context.getCurrentContext() == null)
-        {
-            Context.enter(); 
-        }
-        result = Context.getCurrentContext();
-        result.setOptimizationLevel(-1);
-        result.setLanguageVersion(Context.VERSION_1_7);
-        return result;
-    }
-    
     public void setResourceResolverFactory(
             ResourceResolverFactory resourceResolverFactory) {
         this.resourceResolverFactory = resourceResolverFactory;
     }
+    
+    public void setWebResourceScriptRunnerFactory(
+			WebResourceScriptRunnerFactory webResourceScriptRunnerFactory) {
+		this.webResourceScriptRunnerFactory = webResourceScriptRunnerFactory;
+	}
 }

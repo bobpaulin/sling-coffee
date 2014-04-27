@@ -18,16 +18,16 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.coffee.CoffeeScriptCompilerImpl;
+import org.apache.sling.webresource.WebResourceScriptRunnerFactory;
+import org.apache.sling.webresource.impl.WebResourceScriptRunnerFactoryImpl;
 import org.junit.BeforeClass;
 import org.junit.AfterClass;
 import org.junit.Test;
 import org.osgi.service.component.ComponentContext;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.FileUtils;
 
 import static org.easymock.EasyMock.*;
-
 import junit.framework.TestCase;
 
 /**
@@ -43,6 +43,8 @@ import junit.framework.TestCase;
 public class CoffeeScriptCompilerImplTest extends TestCase {
     
     private CoffeeScriptCompilerImpl coffeeEx;
+    
+    private WebResourceScriptRunnerFactory webResourceScriptRunnerFactory;
     
     private ResourceResolverFactory mockResourceResolverFactory;
     
@@ -64,9 +66,13 @@ public class CoffeeScriptCompilerImplTest extends TestCase {
         super.setUp();
         coffeeEx = new CoffeeScriptCompilerImpl();
         
+        webResourceScriptRunnerFactory = new WebResourceScriptRunnerFactoryImpl();
+        
         mockResourceResolverFactory = createMock(ResourceResolverFactory.class);
         
         coffeeEx.setResourceResolverFactory(mockResourceResolverFactory);
+        
+        coffeeEx.setWebResourceScriptRunnerFactory(webResourceScriptRunnerFactory);
         
         mockComponentContext = createMock(ComponentContext.class);
         mockResourceResolver = createMock(ResourceResolver.class);
