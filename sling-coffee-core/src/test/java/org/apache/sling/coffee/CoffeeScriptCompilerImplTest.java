@@ -18,7 +18,11 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.coffee.CoffeeScriptCompilerImpl;
+import org.apache.sling.webresource.WebResourceInventoryManager;
+import org.apache.sling.webresource.WebResourceScriptCache;
 import org.apache.sling.webresource.WebResourceScriptRunnerFactory;
+import org.apache.sling.webresource.impl.WebResourceInventoryManagerImpl;
+import org.apache.sling.webresource.impl.WebResourceScriptCacheImpl;
 import org.apache.sling.webresource.impl.WebResourceScriptRunnerFactoryImpl;
 import org.junit.BeforeClass;
 import org.junit.AfterClass;
@@ -44,7 +48,7 @@ public class CoffeeScriptCompilerImplTest extends TestCase {
     
     private CoffeeScriptCompilerImpl coffeeEx;
     
-    private WebResourceScriptRunnerFactory webResourceScriptRunnerFactory;
+    private WebResourceScriptRunnerFactoryImpl webResourceScriptRunnerFactory;
     
     private ResourceResolverFactory mockResourceResolverFactory;
     
@@ -67,6 +71,14 @@ public class CoffeeScriptCompilerImplTest extends TestCase {
         coffeeEx = new CoffeeScriptCompilerImpl();
         
         webResourceScriptRunnerFactory = new WebResourceScriptRunnerFactoryImpl();
+        
+        WebResourceInventoryManager inventoryManagerMock = new WebResourceInventoryManagerImpl();
+        
+        WebResourceScriptCache scriptCacheMock = new WebResourceScriptCacheImpl();
+        
+        webResourceScriptRunnerFactory.setWebResourceInventoryManager(inventoryManagerMock);
+        
+        webResourceScriptRunnerFactory.setWebResourceScriptCache(scriptCacheMock);
         
         mockResourceResolverFactory = createMock(ResourceResolverFactory.class);
         
